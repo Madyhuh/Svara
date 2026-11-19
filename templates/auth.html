@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Account Access | Svara Sign Language{% endblock %}
+
+{% block content %}
+<div style="max-width:440px; margin:40px auto;">
+  <div style="background:var(--parchment-card); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:36px 32px; box-shadow:var(--shadow-editorial);">
+    
+    <div style="text-align:center; margin-bottom:28px;">
+      <span class="eyebrow">Academic Portal</span>
+      <h1 style="font-size:26px; margin:8px 0;">
+        {% if mode == 'signup' %}Create Svara Account{% else %}Sign in to Svara{% endif %}
+      </h1>
+      <p style="font-size:13.5px; color:var(--ink-muted);">
+        {% if mode == 'signup' %}
+          Track your progress, save studio sessions, and build a verified streak.
+        {% else %}
+          Access your personal learning dashboard and streak history.
+        {% endif %}
+      </p>
+    </div>
+
+    <form method="POST" action="/auth{% if request.args.get('next') %}?next={{ request.args.get('next') }}{% endif %}">
+      {% if mode == 'signup' %}
+        <input type="hidden" name="action" value="signup">
+        
+        <div style="margin-bottom:16px;">
+          <label for="username" style="display:block; font-size:12px; font-weight:700; color:var(--ink-muted); text-transform:uppercase; margin-bottom:6px;">Username</label>
+          <input type="text" id="username" name="username" required style="width:100%; padding:10px 14px; border-radius:var(--radius-sm); border:1px solid var(--border-subtle); font-size:14px; background:var(--warm-parchment);">
+        </div>
+
+        <div style="margin-bottom:16px;">
+          <label for="email" style="display:block; font-size:12px; font-weight:700; color:var(--ink-muted); text-transform:uppercase; margin-bottom:6px;">Email Address</label>
+          <input type="email" id="email" name="email" required style="width:100%; padding:10px 14px; border-radius:var(--radius-sm); border:1px solid var(--border-subtle); font-size:14px; background:var(--warm-parchment);">
+        </div>
+
+        <div style="margin-bottom:24px;">
+          <label for="password" style="display:block; font-size:12px; font-weight:700; color:var(--ink-muted); text-transform:uppercase; margin-bottom:6px;">Password (min 6 chars)</label>
+          <input type="password" id="password" name="password" minlength="6" required style="width:100%; padding:10px 14px; border-radius:var(--radius-sm); border:1px solid var(--border-subtle); font-size:14px; background:var(--warm-parchment);">
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%;">Create Account</button>
+
+        <div style="text-align:center; margin-top:20px; font-size:13.5px; color:var(--ink-muted);">
+          Already have an account? <a href="/auth?mode=login" style="color:var(--antique-brass); font-weight:600;">Sign in</a>
+        </div>
+
+      {% else %}
+        <input type="hidden" name="action" value="login">
+
+        <div style="margin-bottom:16px;">
+          <label for="identifier" style="display:block; font-size:12px; font-weight:700; color:var(--ink-muted); text-transform:uppercase; margin-bottom:6px;">Username or Email</label>
+          <input type="text" id="identifier" name="identifier" required style="width:100%; padding:10px 14px; border-radius:var(--radius-sm); border:1px solid var(--border-subtle); font-size:14px; background:var(--warm-parchment);">
+        </div>
+
+        <div style="margin-bottom:24px;">
+          <label for="password" style="display:block; font-size:12px; font-weight:700; color:var(--ink-muted); text-transform:uppercase; margin-bottom:6px;">Password</label>
+          <input type="password" id="password" name="password" required style="width:100%; padding:10px 14px; border-radius:var(--radius-sm); border:1px solid var(--border-subtle); font-size:14px; background:var(--warm-parchment);">
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%;">Sign In</button>
+
+        <div style="text-align:center; margin-top:20px; font-size:13.5px; color:var(--ink-muted);">
+          New to Svara? <a href="/auth?mode=signup" style="color:var(--antique-brass); font-weight:600;">Create account</a>
+        </div>
+      {% endif %}
+    </form>
+  </div>
+</div>
+{% endblock %}

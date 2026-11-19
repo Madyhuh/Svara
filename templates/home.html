@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Svara | Accessible Multilingual Sign Language Platform{% endblock %}
+
+{% block content %}
+<section class="hero-editorial">
+  <div class="editorial-grid">
+    <div>
+      <span class="eyebrow">Bridging Silence and Speech</span>
+      <h1 class="hero-title">Every gesture<br>possesses an <em>authentic voice.</em></h1>
+      <p class="hero-deck">
+        Svara is an academic two-way sign-language recognition and learning ecosystem. 
+        Engineered with MediaPipe geometric tracking and dedicated machine learning classifiers.
+      </p>
+      
+      <div style="display:flex; gap:14px; flex-wrap:wrap;">
+        <a href="/recognize" class="btn btn-primary">Open Recognition Studio</a>
+        <a href="/learn" class="btn btn-secondary">Explore Academy Lessons</a>
+      </div>
+    </div>
+
+    <!-- Overview Details Panel -->
+    <div style="background:var(--parchment-card); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:32px; box-shadow:var(--shadow-editorial);">
+      <span class="eyebrow">Academic Status &amp; Scope</span>
+      <h2 style="font-size:22px; margin:8px 0 16px;">Active Machine Learning Scope</h2>
+      <p style="font-size:14px; color:var(--ink-muted); line-height:1.6; margin-bottom:16px;">
+        The current active pipeline is powered by the student-trained ASL Random Forest model running on 63 normalized coordinates extracted from single-hand wrist geometry.
+      </p>
+      
+      <div style="border-top:1px solid var(--border-subtle); padding-top:14px; display:flex; flex-direction:column; gap:10px;">
+        <div style="display:flex; justify-content:space-between; font-size:13.5px;">
+          <span style="color:var(--ink-muted);">Current Active Signs:</span>
+          <strong>ASL Letters A, B, and L</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:13.5px;">
+          <span style="color:var(--ink-muted);">Extensible Languages:</span>
+          <span>ISL &amp; BSL (Architecture Ready)</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:13.5px;">
+          <span style="color:var(--ink-muted);">Verified Curriculum:</span>
+          <span>{{ total_lessons }} Modular Units</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Two-Way Core Access -->
+<section style="margin-top:60px;">
+  <span class="eyebrow">Two-Way Interactive Modalities</span>
+  <h2 style="font-size:32px; margin-bottom:24px;">Bi-directional Communication</h2>
+
+  <div class="two-way-suite">
+    <!-- Direction 1: Sign to Speech -->
+    <div class="suite-card">
+      <div>
+        <span class="supported-badge">Studio Modality</span>
+        <h2>Sign to Text &amp; Speech</h2>
+        <p>
+          Present your hand to your camera. Real-time landmark tracking isolates key joints, generates normalized coordinates, and feeds your gestures directly to the student classifier.
+        </p>
+      </div>
+      <div>
+        <a href="/recognize" class="btn btn-primary" style="width:100%;">Launch Studio</a>
+      </div>
+    </div>
+
+    <!-- Direction 2: Text to Sign -->
+    <div class="suite-card">
+      <div>
+        <span class="supported-badge">Dictionary Modality</span>
+        <h2>Text &amp; Voice to Sign</h2>
+        <p>
+          Input phrases or spoken voice prompts to inspect verified step-by-step sign-language demonstrations. Clear separation of verified letters versus pending vocabulary.
+        </p>
+      </div>
+      <div>
+        <a href="/translate" class="btn btn-secondary" style="width:100%;">Inspect Sign Dictionary</a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

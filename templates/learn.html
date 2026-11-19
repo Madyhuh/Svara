@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Learning Academy | Svara Sign Language{% endblock %}
+
+{% block content %}
+<div style="max-width:900px; margin:0 auto;">
+  <div style="border-bottom:1px solid var(--border-subtle); padding-bottom:24px; margin-bottom:32px;">
+    <span class="eyebrow">Structured Curriculum</span>
+    <h1 style="font-size:36px; margin:8px 0 12px;">ASL Learning Academy</h1>
+    <p style="color:var(--ink-muted); font-size:16px; margin:0;">
+      Step-by-step masterclasses covering foundational fingerspelling, wrist orientation, and manual discipline.
+    </p>
+  </div>
+
+  <div class="lessons-list-stack">
+    {% for lesson in lessons %}
+      <div class="lesson-row-card">
+        <div class="lesson-meta">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+            <span class="supported-badge">Unit {{ lesson.unit_number }}.{{ lesson.order_index }}</span>
+            <span style="font-size:12px; color:var(--antique-brass); font-weight:700;">Target: {{ lesson.target_signs }}</span>
+          </div>
+          <h3>{{ lesson.title }}</h3>
+          <p>{{ lesson.summary }}</p>
+        </div>
+
+        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
+          {% if lesson.is_completed %}
+            <span style="color:var(--success-emerald); font-size:13px; font-weight:700;">✓ Completed</span>
+            <a href="/practice" class="btn btn-secondary" style="font-size:13px; padding:6px 14px;">Review Practice</a>
+          {% else %}
+            {% if current_user %}
+              <button onclick="markLessonComplete({{ lesson.id }}, this)" class="btn btn-primary" style="font-size:13px; padding:8px 16px;">
+                Mark Complete
+              </button>
+            {% else %}
+              <a href="/auth?mode=login" class="btn btn-primary" style="font-size:13px; padding:8px 16px;">
+                Sign In to Track
+              </a>
+            {% endif %}
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function markLessonComplete(lessonId, btn) {
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+  try {
+    const res = await fetch(`/api/lessons/${lessonId}/complete`, { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+      btn.parentElement.innerHTML = '<span style="color:var(--success-emerald); font-size:13px; font-weight:700;">✓ Completed</span>';
+      // Reload page after brief delay to update header streak pill
+      setTimeout(() => window.location.reload(), 600);
+    }
+  } catch(e) {
+    alert('Failed to record lesson progress.');
+    btn.disabled = false;
+    btn.textContent = 'Mark Complete';
+  }
+}
+</script>
+{% endblock %}

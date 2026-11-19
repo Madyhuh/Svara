@@ -1,0 +1,22 @@
+{
+  "name": "Svara Sign Language",
+  "short_name": "Svara",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F7F4EB",
+  "theme_color": "#1E355F",
+  "orientation": "portrait-primary",
+  "description": "Premium, two-way multilingual sign-language recognition and learning platform.",
+  "icons": [
+    {
+      "src": "/static/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/static/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
+}

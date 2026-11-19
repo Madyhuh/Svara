@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block title %}Interactive Practice Studio | Svara Sign Language{% endblock %}
+
+{% block head_extra %}
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+{% endblock %}
+
+{% block content %}
+<div class="editorial-grid">
+  <!-- Guidance & Active Exercises -->
+  <div>
+    <span class="eyebrow">Real-Time Evaluation Studio</span>
+    <h1 style="font-size:32px; margin-bottom:12px;">Camera-Based Sign Practice</h1>
+    <p style="font-size:15px; color:var(--ink-muted); margin-bottom:24px;">
+      Practice active ASL handshapes under real-time machine learning feedback. Svara validates your hand alignment against the trained classifier.
+    </p>
+
+    <div style="background:var(--parchment-card); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:24px; box-shadow:var(--shadow-editorial); margin-bottom:24px;">
+      <h3 style="font-size:18px; margin-bottom:12px;">Select Practice Target</h3>
+      <div style="display:flex; gap:10px;">
+        {% for s in active_signs %}
+          <button class="target-sign-btn btn {% if loop.first %}btn-primary{% else %}btn-secondary{% endif %}" data-sign="{{ s.label }}" style="min-width:60px;">
+            Letter {{ s.label }}
+          </button>
+        {% endfor %}
+      </div>
+
+      <div id="target-detail-box" style="margin-top:20px; padding:16px; background:var(--warm-parchment); border-radius:var(--radius-sm); border:1px solid var(--border-subtle);">
+        <strong id="target-title" style="color:var(--primary-navy); font-size:16px;">Target: ASL Letter A</strong>
+        <p id="target-desc" style="font-size:13.5px; color:var(--ink-muted); margin:8px 0 0;">
+          Fist upright, thumb resting flat against the side of the index finger.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Camera Practice Viewport -->
+  <div>
+    <div class="studio-viewport-card">
+      <div class="viewport-header">
+        <span class="studio-badge" id="practice-badge">Target Match: Waiting</span>
+        <button id="btn-practice-cam-toggle" class="btn btn-honey" style="font-size:12px; padding:4px 10px;">Start Camera</button>
+      </div>
+      
+      <div class="camera-feed-box" style="aspect-ratio: 4 / 3;">
+        <video id="webcam" playsinline autoplay muted></video>
+        <canvas id="landmark-canvas"></canvas>
+        <div class="camera-overlay-prompt" id="practice-prompt">
+          <p style="color:#F7F4EB; font-size:13px;">Activate camera to practice.</p>
+        </div>
+      </div>
+
+      <div style="padding:16px; background:#111A26; color:#F7F4EB; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div style="font-size:11px; color:#8A98A8; text-transform:uppercase;">Evaluated Sign:</div>
+          <div id="practice-live-prediction" style="font-size:24px; font-weight:800; color:#FBCF84;">—</div>
+        </div>
+        <div>
+          <div style="font-size:11px; color:#8A98A8; text-transform:uppercase;">Confidence:</div>
+          <div id="practice-live-confidence" style="font-size:18px; font-weight:700;">0.0%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentTarget = 'A';
+const signBtns = document.querySelectorAll('.target-sign-btn');
+const targetTitle = document.getElementById('target-title');
+const targetDesc = document.getElementById('target-desc');
+
+const descriptions = {
+  'A': 'Fist upright, thumb resting flat against the side of the index finger.',
+  'B': 'Open palm with four fingers upright and joined; thumb folded across the palm.',
+  'L': "Hand forms an 'L' shape using the index finger upright and thumb extended sideways."
+};
+
+signBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    signBtns.forEach(b => { b.classList.remove('btn-primary'); b.classList.add('btn-secondary'); });
+    btn.classList.remove('btn-secondary');
+    btn.classList.add('btn-primary');
+    currentTarget = btn.getAttribute('data-sign');
+    targetTitle.textContent = `Target: ASL Letter ${currentTarget}`;
+    targetDesc.textContent = descriptions[currentTarget] || '';
+  });
+});
+
+// Camera & Detection wiring
+const video = document.getElementById('webcam');
+const canvas = document.getElementById('landmark-canvas');
+const ctx = canvas.getContext('2d');
+const btnToggle = document.getElementById('btn-practice-cam-toggle');
+const promptEl = document.getElementById('practice-prompt');
+const badge = document.getElementById('practice-badge');
+const predEl = document.getElementById('practice-live-prediction');
+const confEl = document.getElementById('practice-live-confidence');
+
+let cameraInstance = null;
+let handsInstance = null;
+let isStreaming = false;
+let lastInferenceTime = 0;
+
+async function setupHands() {
+  handsInstance = new Hands({
+    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+  });
+  handsInstance.setOptions({
+    maxNumHands: 1,
+    modelComplexity: 1,
+    minDetectionConfidence: 0.6,
+    minTrackingConfidence: 0.6
+  });
+  handsInstance.onResults(onResults);
+}
+
+function onResults(results) {
+  canvas.width = video.videoWidth || 640;
+  canvas.height = video.videoHeight || 480;
+  ctx.save();
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+    const hand = results.multiHandLandmarks[0];
+    // Draw landmarks
+    for (let i = 0; i < hand.length; i++) {
+      const pt = hand[i];
+      ctx.beginPath();
+      ctx.arc(pt.x * canvas.width, pt.y * canvas.height, 4, 0, 2 * Math.PI);
+      ctx.fillStyle = '#FBCF84';
+      ctx.fill();
+    }
+
+    const now = Date.now();
+    if (now - lastInferenceTime > 250) {
+      lastInferenceTime = now;
+      queryModel(hand);
+    }
+  } else {
+    badge.textContent = 'No Hand Detected';
+    badge.style.color = '#8A98A8';
+    predEl.textContent = '—';
+    confEl.textContent = '0.0%';
+  }
+  ctx.restore();
+}
+
+async function queryModel(landmarks) {
+  try {
+    const res = await fetch('/api/recognize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ language: 'ASL', hands: [landmarks] })
+    });
+    const data = await res.json();
+    if (data.status === 'recognized') {
+      predEl.textContent = data.prediction;
+      confEl.textContent = (data.confidence * 100).toFixed(1) + '%';
+      if (data.prediction === currentTarget) {
+        badge.textContent = '✓ Correct Match!';
+        badge.style.color = '#1B7A4E';
+      } else {
+        badge.textContent = `Detected ${data.prediction} (Target: ${currentTarget})`;
+        badge.style.color = '#FBCF84';
+      }
+    } else {
+      predEl.textContent = '—';
+      confEl.textContent = data.confidence ? (data.confidence * 100).toFixed(1) + '%' : '0.0%';
+      badge.textContent = 'Adjust Handshape';
+      badge.style.color = '#8A98A8';
+    }
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+btnToggle.addEventListener('click', async () => {
+  if (!isStreaming) {
+    await setupHands();
+    cameraInstance = new Camera(video, {
+      onFrame: async () => { await handsInstance.send({ image: video }); },
+      width: 640,
+      height: 480
+    });
+    await cameraInstance.start();
+    isStreaming = true;
+    promptEl.style.display = 'none';
+    btnToggle.textContent = 'Stop Camera';
+  } else {
+    if (cameraInstance) await cameraInstance.stop();
+    isStreaming = false;
+    promptEl.style.display = 'block';
+    btnToggle.textContent = 'Start Camera';
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    badge.textContent = 'Camera Inactive';
+    predEl.textContent = '—';
+    confEl.textContent = '0.0%';
+  }
+});
+</script>
+{% endblock %}

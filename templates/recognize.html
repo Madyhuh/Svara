@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Recognition Studio | Svara Sign Language{% endblock %}
+
+{% block head_extra %}
+<!-- MediaPipe Hands & Camera Utils -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+{% endblock %}
+
+{% block content %}
+<div class="studio-container">
+  
+  <!-- Left Column: Camera Viewport -->
+  <div class="studio-viewport-card">
+    <div class="viewport-header">
+      <span class="studio-badge" id="studio-stream-state">● Ready</span>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <label for="language-select" style="font-size:12px; color:#B2C0D1; text-transform:uppercase;">Language:</label>
+        <select id="language-select" style="background:#182536; color:#F7F4EB; border:1px solid rgba(255,255,255,0.15); border-radius:4px; padding:4px 8px; font-size:13px;">
+          {% for lang in languages %}
+            <option value="{{ lang.code }}" {% if lang.code == 'ASL' %}selected{% endif %}>
+              {{ lang.code }} - {{ lang.name }} {% if not lang.is_model_available %}(Extensible){% endif %}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div class="camera-feed-box" id="camera-box">
+      <video id="webcam" playsinline autoplay muted></video>
+      <canvas id="landmark-canvas"></canvas>
+      <div class="camera-overlay-prompt" id="camera-prompt">
+        <h3 style="font-family:var(--font-serif); color:#F7F4EB; margin-bottom:8px;">Camera Inactive</h3>
+        <p style="font-size:13.5px; line-height:1.5;">Click "Initialize Camera" below to begin tracking landmarks.</p>
+      </div>
+    </div>
+
+    <div class="viewport-controls">
+      <div style="display:flex; gap:10px;">
+        <button id="btn-start-camera" class="btn btn-honey" style="font-size:13.5px; padding:8px 16px;">Initialize Camera</button>
+        <button id="btn-stop-camera" class="btn btn-secondary" style="font-size:13.5px; padding:8px 16px; color:#F7F4EB; border-color:rgba(255,255,255,0.2);">Deactivate</button>
+      </div>
+      <div style="font-size:12px; color:#8A98A8;">
+        Target: <strong id="lbl-active-targets" style="color:#FBCF84;">ASL: A, B, L</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Recognition Console & Speech Output -->
+  <div class="studio-console">
+    <span class="eyebrow">Real-Time Evaluation</span>
+    <h2 style="font-size:24px; margin-bottom:20px;">Recognition Status</h2>
+
+    <div class="status-indicator-box">
+      <div class="status-label-row">
+        <span style="font-size:12px; font-weight:700; color:var(--ink-muted); text-transform:uppercase;">Model Signal</span>
+        <span id="badge-status" class="status-state-pill pill-no-hand">No Hand Detected</span>
+      </div>
+
+      <div style="text-align:center; padding:16px 0;">
+        <div id="display-prediction" class="recognized-big-letter">—</div>
+        <div id="lbl-status-desc" style="font-size:14px; color:var(--ink-muted);">Camera is currently idle.</div>
+      </div>
+
+      <div class="confidence-meter-container">
+        <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:600;">
+          <span style="color:var(--ink-muted);">Classifier Confidence</span>
+          <span id="lbl-confidence-num">0.0%</span>
+        </div>
+        <div class="confidence-bar-bg">
+          <div id="bar-confidence" class="confidence-bar-fill"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Speech Synthesis & Text Accumulator -->
+    <div class="recognized-buffer-tape">
+      <div style="display:flex; justify-content:space-between; align-items:baseline;">
+        <span class="eyebrow" style="margin:0;">Accumulated Transcript</span>
+        <button id="btn-clear-tape" style="background:none; border:none; font-size:12px; color:var(--ink-muted); text-decoration:underline; cursor:pointer;">Clear</button>
+      </div>
+      <div class="tape-output" id="tape-output" aria-live="polite"></div>
+      
+      <div style="display:flex; gap:10px; margin-top:14px;">
+        <button id="btn-speak-tape" class="btn btn-primary" style="flex:1;">
+          🔊 Speak Transcript
+        </button>
+      </div>
+    </div>
+
+    <!-- Model Transparency Note -->
+    <div style="margin-top:24px; font-size:12px; color:var(--ink-light); line-height:1.5;">
+      <strong>Note:</strong> Predictions reflect actual evaluation from <code>models/asl_static.joblib</code> trained by the students. 
+      Only real evaluations with confidence &ge; 80% update the transcript.
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/recognize.js') }}"></script>
+{% endblock %}

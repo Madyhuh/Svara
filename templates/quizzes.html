@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Knowledge Quizzes | Svara Sign Language{% endblock %}
+
+{% block content %}
+<div style="max-width:840px; margin:0 auto;">
+  <div style="border-bottom:1px solid var(--border-subtle); padding-bottom:20px; margin-bottom:32px;">
+    <span class="eyebrow">Academic Assessment</span>
+    <h1 style="font-size:34px; margin:8px 0 10px;">Fingerspelling &amp; Linguistics Quizzes</h1>
+    <p style="color:var(--ink-muted); font-size:15px; margin:0;">
+      Test your comprehension of manual handshapes, spatial discipline, and multilingual sign language scope.
+    </p>
+  </div>
+
+  {% for q in quizzes %}
+    <div class="quiz-card" id="quiz-box-{{ q.id }}">
+      <div style="display:flex; justify-content:space-between; align-items:baseline;">
+        <span class="eyebrow" style="margin:0;">Question {{ loop.index }}</span>
+        {% if q.previous_attempt %}
+          <span style="font-size:12px; font-weight:700; color:{% if q.previous_attempt.is_correct %}var(--success-emerald){% else %}var(--danger-crimson){% endif %};">
+            {% if q.previous_attempt.is_correct %}✓ Passed{% else %}✗ Attempted{% endif %}
+          </span>
+        {% endif %}
+      </div>
+
+      <h3 style="font-size:18px; margin:14px 0 20px;">{{ q.question }}</h3>
+
+      <div class="quiz-options-group" data-quiz-id="{{ q.id }}">
+        {% for opt in q.options %}
+          <button class="quiz-option-btn {% if q.previous_attempt and q.previous_attempt.selected == opt %}selected{% endif %}" onclick="selectQuizOption({{ q.id }}, '{{ opt | escape }}', this)">
+            {{ opt }}
+          </button>
+        {% endfor %}
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
+        {% if current_user %}
+          <button class="btn btn-primary" id="btn-submit-{{ q.id }}" onclick="submitQuiz({{ q.id }})">
+            Submit Answer
+          </button>
+        {% else %}
+          <a href="/auth?mode=login" class="btn btn-secondary" style="font-size:13px;">Sign In to Submit</a>
+        {% endif %}
+      </div>
+
+      <div id="quiz-result-{{ q.id }}" class="quiz-explanation-box" style="display:none;"></div>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const selectedAnswers = {};
+
+function selectQuizOption(quizId, optionText, btn) {
+  selectedAnswers[quizId] = optionText;
+  const parent = btn.parentElement;
+  parent.querySelectorAll('.quiz-option-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+async function submitQuiz(quizId) {
+  const chosen = selectedAnswers[quizId];
+  if (!chosen) {
+    alert('Please select an option before submitting.');
+    return;
+  }
+  const submitBtn = document.getElementById(`btn-submit-${quizId}`);
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Checking...';
+
+  try {
+    const res = await fetch(`/api/quizzes/${quizId}/submit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ selected_answer: chosen })
+    });
+    const data = await res.json();
+    const resultBox = document.getElementById(`quiz-result-${quizId}`);
+    resultBox.style.display = 'block';
+
+    if (data.is_correct) {
+      resultBox.style.backgroundColor = 'var(--soft-mist)';
+      resultBox.style.color = 'var(--success-emerald)';
+      resultBox.innerHTML = `<strong>✓ Correct!</strong> ${data.explanation}`;
+    } else {
+      resultBox.style.backgroundColor = '#FDF0F0';
+      resultBox.style.color = 'var(--danger-crimson)';
+      resultBox.innerHTML = `<strong>✗ Incorrect.</strong> Correct answer: <em>${data.correct_answer}</em>.<br>${data.explanation}`;
+    }
+    submitBtn.textContent = 'Completed';
+  } catch(e) {
+    alert('Failed to submit answer.');
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Submit Answer';
+  }
+}
+</script>
+{% endblock %}
