@@ -1,0 +1,33 @@
+
+# Python environments
+.venv/
+.venv-ml/
+venv/
+
+# Python temporary files
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.key
+
+# Local database
+database/*.db
+database/*.db-journal
+
+# Temporary files
+*.log
+.DS_Store
+Thumbs.db
+
+# Local training datasets
+data/*.csv
+
+# Model checkpoints
+models/*.joblib
+models/*.pt
+models/*.pth
